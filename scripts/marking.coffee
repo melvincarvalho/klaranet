@@ -27,10 +27,10 @@ exec = require('child_process').exec;
 credits  = {} # simple key value store or URI / balance for now
 symbol   = '₥'
 secret   = process.env.HUBOT_DEPOSIT_SECRET
-if process.env.HUBOT_ADAPTOR is 'irc'
+if process.env.HUBOT_ADAPTER is 'irc'
   adapter = 'irc'
   irc_server = process.env.HUBOT_IRC_SERVER
-else if process.env.HUBOT_ADAPTOR is 'slack'
+else if process.env.HUBOT_ADAPTER is 'slack'
   adapter = 'slack'
   slack_team = process.env.HUBOT_SLACK_TEAM
 else
@@ -62,7 +62,7 @@ transfer_credits = (msg, URI, amount) ->
     credits[URI] ?= 0
     credits[URI] += parseFloat(amount)
     credits[to_URI(msg.message.user.name)] -= parseFloat(amount)
-    msg.send amount + symbol + ' to ' + from_URI(URI)
+    msg.send amount + symbol + ' has been awarded to ' + from_URI(URI)
   else
     msg.send 'not enough funds'
 
