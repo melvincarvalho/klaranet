@@ -28,7 +28,7 @@ credits  = {} # simple key value store or URI / balance for now
 symbol   = '₥'
 secret   = process.env.HUBOT_DEPOSIT_SECRET
 if process.env.HUBOT_ADAPTOR is 'irc'
-  adapter = 'IRC'
+  adapter = 'irc'
   irc_server = process.env.HUBOT_IRC_SERVER
 else if process.env.HUBOT_ADAPTOR is 'slack'
   adapter = 'slack'
