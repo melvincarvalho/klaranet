@@ -25,19 +25,31 @@ exec = require('child_process').exec;
 
 # init
 credits  = {} # simple key value store or URI / balance for now
-secret   = process.env.HUBOT_DEPOSIT_SECRET
 symbol   = '₥'
-platform = 'IRC'
+secret   = process.env.HUBOT_DEPOSIT_SECRET
+if process.env.HUBOT_ADAPTOR is 'irc'
+  adapter = 'IRC'
+  irc_server = process.env.HUBOT_IRC_SERVER
+else if process.env.HUBOT_ADAPTOR is 'slack'
+  adapter = 'slack'
+  slack_team = process.env.HUBOT_SLACK_TEAM
+else
+  throw new Error('HUBOT_ADAPTER env variable is required')
 
 
 # functions
 to_URI = ( id ) ->
-  if platform is 'IRC'
-    'irc://' + id + '@irc.freenode.net/'
+  if adapter is 'irc'
+    'irc://' + id + '@' + irc_server + '/'
+  else if adapter is 'slack'
+    'https://' + slack_team + '.slack.com/team/' + id + '#this'
 
 from_URI = ( URI ) ->
-  if platform is 'IRC'
+  if adapter is 'irc'
     URI.split(":")[1].substring(2).split('@')[0]
+  else if adapter is 'slack'
+    URI.split(":")[1].substring(2).split('/')[2].split('#')[0]
+
 
 #   deposit  <user> <amount> <secret> - deposit amount using shared secret
 deposit_credits = (msg, URI, amount) ->
