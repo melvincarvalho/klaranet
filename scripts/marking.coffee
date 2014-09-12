@@ -13,6 +13,7 @@
 #   mark     <user> <amount>          - mark user amount
 #   withdraw <address> <amount>       - withdraw to address amount
 #   balance  <user>                   - balance for a user
+#   +1                                - one mark to the last user
 #
 # Author:
 #   bitmark team
@@ -26,6 +27,7 @@ exec = require('child_process').exec;
 # init
 credits  = {} # simple key value store or URI / balance for now
 symbol   = '₥'
+last     = 'klaranet'
 secret   = process.env.HUBOT_DEPOSIT_SECRET
 if process.env.HUBOT_ADAPTER is 'irc'
   adapter = 'irc'
@@ -64,7 +66,8 @@ transfer_credits = (msg, URI, amount) ->
     credits[to_URI(msg.message.user.name)] -= parseFloat(amount)
     msg.send amount + symbol + ' has been awarded to ' + from_URI(URI)
   else
-    msg.send 'not enough funds'
+    msg.send 'sorry, not enough funds'
+
 
 withdraw_credits = (msg, address, amount) ->
   if credits[to_URI(msg.message.user.name)] >= parseFloat(amount)
@@ -97,8 +100,16 @@ module.exports = (robot) ->
       save(robot)
         
   # TRANSFER
-  robot.hear /(transfer|mark) @?([\w\S]+) (\d+)$/i, (msg) ->
+  robot.hear /^(transfer|mark) @?([\w\S]+) (\d+)$/i, (msg) ->
     transfer_credits(msg, to_URI(msg.match[2]), msg.match[3])
+    save(robot)
+
+  robot.hear /^(transfer|mark) @?([\w\S]+) ?$/i, (msg) ->
+    transfer_credits(msg, to_URI(msg.match[2]), 1)
+    save(robot)
+
+  robot.hear /^\+1$/i, (msg) ->
+    transfer_credits(msg, to_URI(last), 1)
     save(robot)
 
   # WITHDRAW
@@ -111,5 +122,23 @@ module.exports = (robot) ->
     URI = to_URI(msg.match[1])
     credits[URI] ?= 0
     msg.send from_URI(URI) + ' has ' + credits[URI] + symbol
+    console.log(URI)
+    console.log(from_URI(URI))
+
+  robot.hear /balance ?$/i, (msg) ->
+    URI = to_URI(msg.message.user.name)
+    credits[URI] ?= 0
+    msg.send from_URI(URI) + ' has ' + credits[URI] + symbol
+    console.log(URI)
+    console.log(from_URI(URI))
+
+
+  # LISTEN
+  robot.hear /.*/i, (msg) ->
+    last = msg.message.user.name
+
+
+
+
   
        
