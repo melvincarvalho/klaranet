@@ -37,21 +37,25 @@ else if process.env.HUBOT_ADAPTER is 'slack'
   slack_team = process.env.HUBOT_SLACK_TEAM
 else
   throw new Error('HUBOT_ADAPTER env variable is required')
+  #adapter = 'slack'
 
 
 # functions
 to_URI = ( id ) ->
-  if adapter is 'irc'
+  if id.indexOf(':') != -1
+    id
+  else if adapter is 'irc'
     'irc://' + id + '@' + irc_server + '/'
   else if adapter is 'slack'
     'https://' + slack_team + '.slack.com/team/' + id + '#this'
 
 from_URI = ( URI ) ->
-  if adapter is 'irc'
+  if URI.indexOf('irc://') is 0 and adapter is 'irc'
     URI.split(":")[1].substring(2).split('@')[0]
-  else if adapter is 'slack'
+  else if URI.indexOf('https://') is 0 and URI.indexOf('#this') != -1 and adapter is 'slack'
     URI.split(":")[1].substring(2).split('/')[2].split('#')[0]
-
+  else
+    URI
 
 #   deposit  <user> <amount> <secret> - deposit amount using shared secret
 deposit_credits = (msg, URI, amount) ->
@@ -118,19 +122,19 @@ module.exports = (robot) ->
     save(robot)
     
   # BALANCE
-  robot.hear /balance @?([\w\S]+)$/i, (msg) ->
+  robot.hear /^balance @?([\w\S]+)$/i, (msg) ->
     URI = to_URI(msg.match[1])
+    #msg.send('to URI is : ' + URI)
+    #msg.send('from URI is : ' + from_URI(URI))
     credits[URI] ?= 0
     msg.send from_URI(URI) + ' has ' + credits[URI] + symbol
-    console.log(URI)
-    console.log(from_URI(URI))
 
-  robot.hear /balance ?$/i, (msg) ->
+  robot.hear /^balance ?$/i, (msg) ->
     URI = to_URI(msg.message.user.name)
+    #msg.send('to URI is : ' + URI)
+    #msg.send('from URI is : ' + from_URI(URI))
     credits[URI] ?= 0
     msg.send from_URI(URI) + ' has ' + credits[URI] + symbol
-    console.log(URI)
-    console.log(from_URI(URI))
 
 
   # LISTEN
