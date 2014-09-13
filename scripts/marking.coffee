@@ -58,37 +58,37 @@ from_URI = ( URI ) ->
     URI
 
 #   deposit  <user> <amount> <secret> - deposit amount using shared secret
-deposit_credits = (msg, URI, amount) ->
-  credits[URI] ?= 0
-  credits[URI] += parseFloat(amount)
+deposit_credits = (msg, URI, amount, robot) ->
+  robot.brain.data.credits[URI] ?= 0
+  robot.brain.data.credits[URI] += parseFloat(amount)
   msg.send amount + symbol + ' to ' + from_URI(URI)
 
-transfer_credits = (msg, URI, amount) ->
-  if credits[to_URI(msg.message.user.name)] >= parseFloat(amount)
-    credits[URI] ?= 0
-    credits[URI] += parseFloat(amount)
-    credits[to_URI(msg.message.user.name)] -= parseFloat(amount)
+transfer_credits = (msg, URI, amount, robot) ->
+  if robot.brain.data.credits[to_URI(msg.message.user.name)] >= parseFloat(amount)
+    robot.brain.data.credits[URI] ?= 0
+    robot.brain.data.credits[URI] += parseFloat(amount)
+    robot.brain.data.credits[to_URI(msg.message.user.name)] -= parseFloat(amount)
     msg.send amount + symbol + ' has been awarded to ' + from_URI(URI)
   else
     msg.send 'sorry, not enough funds'
 
 
 withdraw_credits = (msg, address, amount) ->
-  if credits[to_URI(msg.message.user.name)] >= parseFloat(amount)
+  if robot.brain.data.credits[to_URI(msg.message.user.name)] >= parseFloat(amount)
     command = 'bitmark-cli sendtoaddress ' + address + ' ' + ( parseFloat(amount) / 1000.0 )
     console.log(command)
     exec command, (error, stdout, stderr) ->
       console.log(error)
       console.log(stdout)
       console.log(stderr)
-      credits[to_URI(msg.message.user.name)] -= parseFloat(amount)
+      robot.brain.data.credits[to_URI(msg.message.user.name)] -= parseFloat(amount)
       msg.send stdout
   else
     msg.send 'not enough funds'
 
 
 save = (robot) ->
-  robot.brain.data.credits = credits
+  robot.brain.data.credits = robot.brain.data.credits
 
 
 # MAIN
@@ -100,46 +100,48 @@ module.exports = (robot) ->
   robot.hear /deposit @?([^ ]*) (\d+) ([^ ]*)$/i, (msg) ->
     if msg.match[3] is secret
       msg.send 'deposit to ' + msg.match[1] + ' ' + msg.match[2]
-      deposit_credits(msg, to_URI(msg.match[1]), msg.match[2])
+      deposit_credits(msg, to_URI(msg.match[1]), msg.match[2], robot)
       save(robot)
         
   # TRANSFER
   robot.hear /^(transfer|mark) @?([\w\S]+) (\d+)$/i, (msg) ->
-    transfer_credits(msg, to_URI(msg.match[2]), msg.match[3])
+    transfer_credits(msg, to_URI(msg.match[2]), msg.match[3], robot)
     save(robot)
 
   robot.hear /^(transfer|mark) @?([\w\S]+) ?$/i, (msg) ->
-    transfer_credits(msg, to_URI(msg.match[2]), 1)
+    transfer_credits(msg, to_URI(msg.match[2]), 1, robot)
     save(robot)
 
   robot.hear /^\+1$/i, (msg) ->
-    transfer_credits(msg, to_URI(last), 1)
+    transfer_credits(msg, to_URI(last), 1, robot)
     save(robot)
 
   # WITHDRAW
   robot.hear /withdraw ([\w\S]+) (\d+)$/i, (msg) ->
-    withdraw_credits(msg, msg.match[1], msg.match[2])
+    withdraw_credits(msg, msg.match[1], msg.match[2], robot)
     save(robot)
     
   # BALANCE
   robot.hear /^balance @?([\w\S]+)$/i, (msg) ->
+    #redis-brain.getData()
     URI = to_URI(msg.match[1])
     #msg.send('to URI is : ' + URI)
     #msg.send('from URI is : ' + from_URI(URI))
-    credits[URI] ?= 0
-    msg.send from_URI(URI) + ' has ' + credits[URI] + symbol
+    robot.brain.data.credits[URI] ?= 0
+    msg.send from_URI(URI) + ' has ' + robot.brain.data.credits[URI] + symbol
 
   robot.hear /^balance ?$/i, (msg) ->
     URI = to_URI(msg.message.user.name)
     #msg.send('to URI is : ' + URI)
     #msg.send('from URI is : ' + from_URI(URI))
-    credits[URI] ?= 0
-    msg.send from_URI(URI) + ' has ' + credits[URI] + symbol
+    robot.brain.data.credits[URI] ?= 0
+    msg.send from_URI(URI) + ' has ' + robot.brain.data.credits[URI] + symbol
 
 
   # LISTEN
   robot.hear /.*/i, (msg) ->
     last = msg.message.user.name
+    console.log("[" + (new Date).toLocaleTimeString() + "] " + msg.message.text)
 
 
 
