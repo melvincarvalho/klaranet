@@ -52,7 +52,7 @@ to_URI = ( id ) ->
 from_URI = ( URI ) ->
   if URI.indexOf('irc://') is 0 and adapter is 'irc'
     URI.split(":")[1].substring(2).split('@')[0]
-  else if URI.indexOf('https://') is 0 and URI.indexOf('#this') != -1 and adapter is 'slack'
+  else if URI.indexOf('https://' + slack_team + '.slack.com/team/') is 0 and URI.indexOf('#this') != -1 and adapter is 'slack'
     URI.split(":")[1].substring(2).split('/')[2].split('#')[0]
   else
     URI
@@ -73,7 +73,7 @@ transfer_credits = (msg, URI, amount, robot) ->
     msg.send 'sorry, not enough funds'
 
 
-withdraw_credits = (msg, address, amount) ->
+withdraw_credits = (msg, address, amount, robot) ->
   if robot.brain.data.credits[to_URI(msg.message.user.name)] >= parseFloat(amount)
     command = 'bitmark-cli sendtoaddress ' + address + ' ' + ( parseFloat(amount) / 1000.0 )
     console.log(command)
