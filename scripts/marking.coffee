@@ -95,34 +95,42 @@ save = (robot) ->
 module.exports = (robot) ->
   robot.brain.on 'loaded', ->
     credits = robot.brain.data.credits or {}
+    robot.brain.resetSaveInterval(1) 
 
   # DEPOSIT
-  robot.hear /deposit @?([^ ]*) (\d+) ([^ ]*)$/i, (msg) ->
+  robot.hear /deposit\s+(\d+)\s+([\w\S]+)\s+([\w\S]*)$/i, (msg) ->
     if msg.match[3] is secret
       msg.send 'deposit to ' + msg.match[1] + ' ' + msg.match[2]
       deposit_credits(msg, to_URI(msg.match[1]), msg.match[2], robot)
       save(robot)
         
   # TRANSFER
-  robot.hear /^(transfer|mark) @?([\w\S]+) (\d+)$/i, (msg) ->
+  robot.hear /^(transfer|mark)\s+@?([\w\S]+)\s*(\d+)\s*$/i, (msg) ->
     transfer_credits(msg, to_URI(msg.match[2]), msg.match[3], robot)
     save(robot)
 
-  robot.hear /^(transfer|mark) @?([\w\S]+) ?$/i, (msg) ->
+  robot.hear /^(transfer|mark)\s+@?([\w\S]+)\s*$/i, (msg) ->
     transfer_credits(msg, to_URI(msg.match[2]), 1, robot)
     save(robot)
 
-  robot.hear /^\+1$/i, (msg) ->
-    transfer_credits(msg, to_URI(last), 1, robot)
+  robot.hear /^\+(\d+)\s*$/i, (msg) ->
+    plus = msg.match[1]
+    if plus <= 25
+      transfer_credits(msg, to_URI(last), plus, robot)
+    else
+      msg.send 'Max is +25'
     save(robot)
 
   # WITHDRAW
-  robot.hear /withdraw ([\w\S]+) (\d+)$/i, (msg) ->
-    withdraw_credits(msg, msg.match[1], msg.match[2], robot)
+  robot.hear /withdraw\s+([\w\S]+)\s+(\d+)\s*$/i, (msg) ->
+    destination = msg.match[1]
+    if destination is 'foundation'
+      destination = 'bQmnzVS5M4bBdZqBTuHrjnzxHS6oSUz6cG'
+    withdraw_credits(msg, destination, msg.match[2], robot)
     save(robot)
     
   # BALANCE
-  robot.hear /^balance @?([\w\S]+)$/i, (msg) ->
+  robot.hear /^balance\s+@?([\w\S]+)\s*$/i, (msg) ->
     #redis-brain.getData()
     URI = to_URI(msg.match[1])
     #msg.send('to URI is : ' + URI)
@@ -130,7 +138,7 @@ module.exports = (robot) ->
     robot.brain.data.credits[URI] ?= 0
     msg.send from_URI(URI) + ' has ' + robot.brain.data.credits[URI] + symbol
 
-  robot.hear /^balance ?$/i, (msg) ->
+  robot.hear /^balance\s*$/i, (msg) ->
     URI = to_URI(msg.message.user.name)
     #msg.send('to URI is : ' + URI)
     #msg.send('from URI is : ' + from_URI(URI))
