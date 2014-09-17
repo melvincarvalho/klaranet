@@ -22,9 +22,12 @@
 
 # requires
 exec = require('child_process').exec;
+sqlite3 = require('sqlite3').verbose();
 
 
 # init
+db = new sqlite3.Database('marks');
+
 credits  = {} # simple key value store or URI / balance for now
 symbol   = '₥'
 last     = 'klaranet'
@@ -35,6 +38,8 @@ if process.env.HUBOT_ADAPTER is 'irc'
 else if process.env.HUBOT_ADAPTER is 'slack'
   adapter = 'slack'
   slack_team = process.env.HUBOT_SLACK_TEAM
+else if process.env.HUBOT_ADAPTER is 'shell'
+  adapter = 'shell'
 else
   throw new Error('HUBOT_ADAPTER env variable is required')
   #adapter = 'slack'
@@ -48,6 +53,10 @@ to_URI = ( id ) ->
     'irc://' + id + '@' + irc_server + '/'
   else if adapter is 'slack'
     'https://' + slack_team + '.slack.com/team/' + id + '#this'
+  else if adapter is 'shell'
+    'urn:shell:' + id
+  else
+     id
 
 from_URI = ( URI ) ->
   if URI.indexOf('irc://') is 0 and adapter is 'irc'
@@ -100,8 +109,8 @@ module.exports = (robot) ->
   # DEPOSIT
   robot.hear /deposit\s+(\d+)\s+([\w\S]+)\s+([\w\S]*)$/i, (msg) ->
     if msg.match[3] is secret
-      msg.send 'deposit to ' + msg.match[1] + ' ' + msg.match[2]
-      deposit_credits(msg, to_URI(msg.match[1]), msg.match[2], robot)
+      msg.send 'deposit to ' + msg.match[2] + ' ' + msg.match[1]
+      deposit_credits(msg, to_URI(msg.match[2]), msg.match[1], robot)
       save(robot)
         
   # TRANSFER
