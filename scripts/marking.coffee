@@ -154,7 +154,11 @@ module.exports = (robot) ->
     robot.brain.data.credits[URI] ?= 0
     msg.send from_URI(URI) + ' has ' + robot.brain.data.credits[URI] + symbol
 
-
+  # WEB
+  
+  robot.router.get "/marks", (req, res) ->
+    res.end JSON.stringify(robot.brain.data.credits)
+    
   # LISTEN
   robot.hear /.*/i, (msg) ->
     last = msg.message.user.name
