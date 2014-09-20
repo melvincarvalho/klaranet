@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "cheerio": "",
+    "sqlite3": "",
     "githubot": "0.4.1",
     "hubot": ">= 2.6.0 < 3.0.0",
     "hubot-irc": "^0.2.7",
